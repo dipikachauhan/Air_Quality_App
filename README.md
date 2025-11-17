@@ -1,71 +1,150 @@
-# Air Quality Forecasting — O3 & NO2 (Per-site models)
+AirPredict: Delhi Air Quality Forecasting System
+Overview
 
-## Project summary
-This repository contains code and saved models to forecast **Ozone (O3)** and **Nitrogen Dioxide (NO2)** for three separate monitoring sites. Models are trained per-site (site_1, site_2, site_3) and per-pollutant. The final prediction is produced by an ensemble of three architectures (LSTM, GRU, Transformer).
+AirPredict is a deep learning–powered system designed to forecast ground-level air pollutants in Delhi, specifically Ozone (O₃) and Nitrogen Dioxide (NO₂). The system uses a hybrid ensemble of LSTM, GRU, and Transformer models, trained on meteorological and pollution time-series data. A Streamlit web application provides real-time forecasting, health recommendations, and spatial visualization.
 
-## Targets
-- O3 (Ozone) — target column: `O3_target`
-- NO2 (Nitrogen Dioxide) — target column: `NO2_target`
+Features
+Deep Learning Ensemble
 
-## Datasets
-- Three site datasets are used: `site_1_train_data.csv`, `site_2_train_data.csv`, `site_3_train_data.csv`.
-- Each file contains meteorological and forecast features, timestamp columns (`year`, `month`, `day`, `hour`), and the target pollutant columns.
+72-hour sliding window input for temporal modeling
 
-## Preprocessing (implemented)
-- Construct `datetime` from `year, month, day, hour` and sort chronologically.
-- Linear interpolation and forward/backward fill for missing numeric values.
-- Drop satellite columns that contain many missing values:
-  - `NO2_satellite`, `HCHO_satellite`, `ratio_satellite`
-- Create cyclic time features: `hour_sin`, `hour_cos`, `month_sin`, `month_cos`.
-- Create short-difference features: `O3_diff`, `NO2_diff`.
-- Create lagged features for targets (lags 1..72).
-- Standard scaling applied separately to X and y.
-- Sequence length (lookback window) used in training/prediction: **72** timesteps.
+Combines:
 
-## Models (per site, per pollutant)
-For each site and for each pollutant the code trains:
-- LSTM (single-output)
-- GRU (single-output)
-- Transformer (single-output)
+LSTM (captures long-term patterns)
 
-Saved model format: native Keras `.keras`.
+GRU (fast and efficient temporal modeling)
 
-Expected saved files (example):
-saved_models/site_1/site_1_O3_LSTM.keras
-saved_models/site_1/site_1_O3_GRU.keras
-saved_models/site_1/site_1_O3_TRANS.keras
-saved_models/site_1/site_1_NO2_LSTM.keras
-Total saved base models = **18** (3 sites × 2 pollutants × 3 model types).
+Transformer Encoder (attention-based pattern learning)
 
-## Ensemble
-- Ensemble prediction used in evaluation and in the app is a weighted average:
-  0.4 * GRU + 0.4 * LSTM + 0.2 * Transformer
-  - The ensemble itself is not saved as a separate trained model; it is computed at runtime from the three saved base models.
+Weighted ensemble for final prediction
 
-## Outputs
-- Saved models in `saved_models/` (structure above)
-- Scalers saved with joblib in `models/scalers/` (one X scaler per site and one y-scaler per site/pollutant)
-- Prediction outputs (CSV) optionally saved as `predicted_vs_actual.csv` or `predictions.csv` for new inputs
-- Numeric evaluation summary (RMSE, MAE, R², RIA) exported to a CSV (e.g., `all_sites_summary.csv`)
+0.4 × GRU + 0.4 × LSTM + 0.2 × Transformer
 
-## Evaluation metrics
-- Root Mean Squared Error (RMSE)
-- Mean Absolute Error (MAE)
-- Coefficient of determination (R²)
-- Refined Index of Agreement (RIA) — calculated in code
+Meteorology-Aware Forecasting
 
-## Notes and design choices
-- Satellite columns (`NO2_satellite`, `HCHO_satellite`, `ratio_satellite`) were dropped because they had many missing values and degraded model performance in experiments.
-- Models are trained independently per-site because sites are not combined due to differing local characteristics.
-- Sequence length 72 chosen to capture multi-day temporal patterns; this can be changed in preprocessing/train code.
-- All models are saved in `.keras` format to avoid legacy HDF5 warnings.
+Model considers:
 
-## Files of interest (high level)
-- Training & model pipeline: the main notebook / script you ran (contains preprocessing, sequence creation, model training)
-- `saved_models/` — trained model weights (per-site subfolders)
-- `models/scalers/` — saved scalers used for X and y transformations
-- `predicted_vs_actual.csv` or per-site CSVs — prediction outputs used for evaluation
-- Streamlit app files (if present) — for visualization and inference using the saved models
+Temperature
 
-## Academic note
-This repository is prepared for academic presentation: code, saved models, scalers, evaluation summaries, and the Streamlit app (if included) together demonstrate the full pipeline from preprocessing to inference for per-site air pollution forecasting.
+Specific humidity
+
+Wind components (u, v, w)
+
+Weather model O₃ forecast
+
+Weather model NO₂ forecast
+
+Interactive Streamlit Dashboard
+
+Predict pollutant concentration for chosen site and time
+
+Auto-classify air quality (Good, Moderate, Poor, Severe)
+
+Provide health recommendations
+
+Show 24–72 hour forecast trends
+
+Display real-station scatter map for pollutants
+
+Supported Monitoring Sites
+
+Three stations from Delhi with geographic coordinates:
+
+Site	Latitude	Longitude
+Site 1	28.69536	77.18168
+Site 2	28.57180	77.07125
+Site 3	28.58278	77.23441
+Methodology
+Data Preprocessing
+
+Removed unused satellite-derived columns
+
+Constructed datetime index and sorted data
+
+Performed linear interpolation and removed missing values
+
+Added cyclic time features (sin/cos of hour and month)
+
+Computed hourly differences (O₃_diff, NO₂_diff)
+
+Generated 72 lag features for both target pollutants
+
+Created 72-step sliding windows
+
+Scaled inputs and outputs using StandardScaler
+
+Split dataset into training (75%) and testing (25%)
+
+Model Training
+
+Each pollutant and each site was trained separately
+
+One scaler per site for inputs
+
+One scaler per pollutant per site for outputs
+
+Three independent models trained per pollutant per site
+
+LSTM
+
+GRU
+
+Transformer
+
+Best weights saved using early stopping and LR scheduler
+
+Predictions combined into a unified ensemble output
+
+Application Workflow
+User Inputs
+
+Site (Site 1, Site 2, Site 3)
+
+Date and hour
+
+Temperature
+
+Specific humidity
+
+Wind (u, v, w)
+
+Weather model O₃ forecast
+
+Weather model NO₂ forecast
+
+Prediction Process
+
+Inputs are transformed into a synthetic 72-hour sequence
+
+Sequence is scaled using stored training scalers
+
+Passed to LSTM, GRU, and Transformer models
+
+Model predictions are ensembled
+
+Final pollutant value is obtained after inverse-scaling
+
+Dashboard Output
+
+Predicted O₃ and NO₂ concentrations
+
+Air Quality Index classification
+
+Health recommendations
+
+Time-series graph for 24/48/72-hour forecast
+
+Spatial scatter map showing pollutant levels at all 3 sites
+
+Directory Structure
+📁 saved_models/
+    ├── site_1/
+    ├── site_2/
+    └── site_3/
+📁 saved_scalers/
+    ├── site_1_X_scaler.pkl
+    ├── site_1_O3_Y_scaler.pkl
+    └── site_2_...
+📄 app.py                 # Streamlit application
+📄 training_notebook.ipynb # Preprocessing + training
+📄 README.md
